@@ -1,0 +1,29 @@
+[project]
+name = "phone-specs"
+version = "0.1.0"
+description = "手机型号基础信息查询工具 — 从 GSMArena 获取全球手机参数规格"
+readme = "README.md"
+authors = [
+    { name = "dengshu2", email = "dengshu5115@gmail.com" },
+]
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.0.0",
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+phone-specs = "phone_specs.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.9.4,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.11.0",
+]
