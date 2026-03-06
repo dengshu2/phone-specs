@@ -9,6 +9,8 @@
 - 🔍 **参数查询** — 获取手机详细规格参数（13 大类、50+ 字段）
 - 🔎 **搜索** — 按关键词搜索手机型号
 - ⚡ **内存缓存** — 自带 TTL 缓存，避免重复请求
+- 🗄️ **数据库存储** — 爬取数据存入 SQLite，支持断点续爬
+- 🔄 **增量更新** — 已爬取的手机自动跳过
 
 ## 快速开始
 
@@ -16,11 +18,30 @@
 # 安装依赖
 uv sync
 
-# 运行测试
-uv run phone-specs
+# 查看帮助
+uv run phone-specs --help
 
-# 或直接作为模块运行
-uv run python -m phone_specs.cli
+# 运行在线演示
+uv run phone-specs demo
+
+# 运行测试
+uv run pytest
+```
+
+## 爬取数据
+
+```bash
+# 爬取某个品牌的全部手机数据到 SQLite
+uv run phone-specs crawl --brand apple
+
+# 全量爬取所有品牌（耗时较长）
+uv run phone-specs crawl --full
+
+# 自定义参数
+uv run phone-specs crawl --brand xiaomi --db my_data.db --delay-min 3 --delay-max 6
+
+# 查看数据库统计
+uv run phone-specs stats
 ```
 
 ## 作为库使用
@@ -57,6 +78,9 @@ phone-specs/
 │       ├── cache.py                # 内存缓存
 │       ├── parser.py               # HTML 解析器
 │       ├── client.py               # HTTP 客户端 (高层 API)
+│       ├── config.py               # 爬虫配置
+│       ├── db.py                   # SQLite 数据库层
+│       ├── crawler.py              # 爬虫调度器
 │       └── cli.py                  # 命令行工具
 └── tests/
     ├── test_cache.py               # 缓存测试

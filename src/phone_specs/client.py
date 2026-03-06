@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import logging
+import random
+import time
 
 import httpx
 from bs4 import BeautifulSoup
 
 from phone_specs.cache import MemoryCache
+from phone_specs.config import USER_AGENTS
 from phone_specs.models import Brand, PhoneListItem, PhoneListResult, PhoneSpecs
 from phone_specs.parser import (
     parse_brands,
@@ -77,12 +80,36 @@ class PhoneSpecsClient:
     # 内部方法
     # ------------------------------------------------------------------
 
-    def _fetch(self, url: str) -> BeautifulSoup:
-        """获取并解析网页。"""
-        logger.debug("GET %s", url)
-        resp = self._http.get(url)
-        resp.raise_for_status()
-        return BeautifulSoup(resp.text, "lxml")
+    def _fetch(self, url: str, *, max_retries: int = 3) -> BeautifulSoup:
+        """获取并解析网页（含重试机制）。"""
+        for attempt in range(max_retries):
+            try:
+                self._http.headers["User-Agent"] = random.choice(USER_AGENTS)
+                logger.debug("GET %s (attempt %d/%d)", url, attempt + 1, max_retries)
+                resp = self._http.get(url)
+                resp.raise_for_status()
+                return BeautifulSoup(resp.text, "lxml")
+            except httpx.HTTPStatusError as e:
+                status = e.response.status_code
+                if status in (403, 429) and attempt < max_retries - 1:
+                    wait = 60 * (2 ** attempt)  # 60s, 120s
+                    logger.warning("HTTP %d → %s, 等待 %ds 后重试...", status, url, wait)
+                    time.sleep(wait)
+                elif status >= 500 and attempt < max_retries - 1:
+                    wait = 15 * (attempt + 1)
+                    logger.warning("HTTP %d → %s, 等待 %ds 后重试...", status, url, wait)
+                    time.sleep(wait)
+                else:
+                    raise
+            except (httpx.ConnectError, httpx.TimeoutException) as e:
+                if attempt < max_retries - 1:
+                    wait = 15 * (attempt + 1)
+                    logger.warning("连接异常 %s: %s, 等待 %ds...", url, e, wait)
+                    time.sleep(wait)
+                else:
+                    raise
+        msg = f"请求失败 (已重试 {max_retries} 次): {url}"
+        raise RuntimeError(msg)
 
     # ------------------------------------------------------------------
     # 公开 API

@@ -11,6 +11,10 @@ wheels/
 # Virtual environments
 .venv/
 
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+
 # IDE
 .idea/
 .vscode/
@@ -23,4 +27,5 @@ Thumbs.db
 
 # Project
 *.json
+*.db
 !pyproject.toml
